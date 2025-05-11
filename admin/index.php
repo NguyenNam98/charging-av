@@ -46,7 +46,7 @@ include_once root .'/includes/header.php';
                 <h2 class="display-4"><?php echo $users->getTotalUsers(); ?></h2>
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="<?php echo '/'; ?>/admin/users.php">View Details</a>
+                <a class="small text-white stretched-link" href="/admin/users.php">View Details</a>
                 <div class="small text-white"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>
@@ -70,7 +70,7 @@ include_once root .'/includes/header.php';
                 <h2 class="display-4"><?php echo $chargingSession->getTotalActiveSessions(); ?></h2>
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="<?php ?>/admin/checkins.php">View Details</a>
+                <a class="small text-white stretched-link" href="<?php ?>/admin/users.php">View Details</a>
                 <div class="small text-white"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>

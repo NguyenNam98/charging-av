@@ -4,17 +4,17 @@ require_once '../config/config.php';
 require_once '../classes/Database.php';
 require_once '../classes/Location.php';
 
-
 $page_title = 'Manage Locations';
 
 // Create Location object
 $location = new Location();
+$locations = $location->getFullLocations();
 
 // Handle delete location
 if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     $id = $_GET['delete'];
     
-    // Delete location
+    // Uncomment to enable deletion
     if ($location->deleteLocation($id)) {
         $_SESSION['flash_message'] = 'Location deleted successfully!';
         $_SESSION['flash_type'] = 'success';
@@ -27,30 +27,6 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     exit;
 }
 
-// Get filter parameter
-$filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
-
-// Get locations based on filter
-switch ($filter) {
-    case 'available':
-        $locations = $location->getAvailableLocations();
-        break;
-    case 'full':
-        $locations = $location->getFullLocations();
-        break;
-    default:
-        // Get all locations with availability info
-        $db = new Database();
-        $db->query('SELECT l.*, 
-                   (l.number_of_stations - COUNT(CASE WHEN cs.status = "active" THEN 1 END)) as available_stations 
-                   FROM charging_locations l 
-                   LEFT JOIN charging_sessions cs ON l.id = cs.location_id AND cs.status = "active" 
-                   GROUP BY l.id 
-                   ORDER BY l.description ASC');
-        $locations = $db->resultSet();
-        break;
-}
-
 // Include header
 include_once '../includes/header.php';
 ?>
@@ -60,26 +36,27 @@ include_once '../includes/header.php';
         <h1>Manage Charging Locations</h1>
     </div>
     <div class="col-md-4 text-end">
-        <a href="<?php echo APP_URL; ?>/admin/add-location.php" class="btn btn-primary">
+        <a href="/admin/add-location.php" class="btn btn-primary">
             <i class="fas fa-plus-circle me-2"></i>Add New Location
         </a>
     </div>
 </div>
 
+<!-- Display flash message if set -->
+<?php if(isset($_SESSION['flash_message'])) : ?>
+    <div class="alert alert-<?php echo $_SESSION['flash_type']; ?> alert-dismissible fade show" role="alert">
+        <?php 
+        echo $_SESSION['flash_message']; 
+        unset($_SESSION['flash_message']);
+        unset($_SESSION['flash_type']);
+        ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
 <div class="card mb-4">
     <div class="card-header bg-light">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <h5 class="mb-0">Charging Locations</h5>
-            </div>
-            <div class="col-md-6 text-end">
-                <div class="btn-group" role="group">
-                    <a href="?filter=all" class="btn btn-outline-primary <?php echo ($filter == 'all') ? 'active' : ''; ?>">All Locations</a>
-                    <a href="?filter=available" class="btn btn-outline-primary <?php echo ($filter == 'available') ? 'active' : ''; ?>">Available Stations</a>
-                    <a href="?filter=full" class="btn btn-outline-primary <?php echo ($filter == 'full') ? 'active' : ''; ?>">Full Locations</a>
-                </div>
-            </div>
-        </div>
+        <h5 class="mb-0">Charging Locations</h5>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -99,36 +76,36 @@ include_once '../includes/header.php';
                         <tr>
                             <td colspan="6" class="text-center">No locations found</td>
                         </tr>
+                    <?php else: ?>
+                        <?php foreach ($locations as $loc) : ?>
+                            <tr>
+                                <td><?php echo isset($loc['location_id']) ? htmlspecialchars($loc['location_id']) : ''; ?></td>
+                                <td><?php echo isset($loc['description']) ? htmlspecialchars($loc['description']) : ''; ?></td>
+                                <td><?php echo isset($loc['num_stations']) ? htmlspecialchars($loc['num_stations']) : ''; ?></td>
+                                <td>
+                                    <?php 
+                                        $available = isset($loc['available_stations']) ? intval($loc['available_stations']) : 0;
+                                        if ($available > 0) {
+                                            echo '<span class="text-success">' . $available . '</span>';
+                                        } else {
+                                            echo '<span class="text-danger">0 (Full)</span>';
+                                        }
+                                    ?>
+                                </td>
+                                <td>$<?php echo isset($loc['cost_per_hour']) ? number_format((float)$loc['cost_per_hour'], 2) : '0.00'; ?></td>
+                                <td>
+                                    <a href="/admin/edit-location.php?id=<?php echo isset($loc['location_id']) ? $loc['location_id'] : ''; ?>" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <a href="/admin/locations.php?delete=<?php echo isset($loc['location_id']) ? $loc['location_id'] : ''; ?>" 
+                                       class="btn btn-sm btn-danger" 
+                                       onclick="return confirm('Are you sure you want to delete this location?');">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
-                    
-                    <?php foreach ($locations as $loc) : ?>
-                        <tr>
-                            <td><?php echo $loc->id; ?></td>
-                            <td><?php echo $loc->description; ?></td>
-                            <td><?php echo $loc->number_of_stations; ?></td>
-                            <td>
-                                <?php 
-                                    $available = isset($loc->available_stations) ? $loc->available_stations : 0;
-                                    if ($available > 0) {
-                                        echo '<span class="text-success">' . $available . '</span>';
-                                    } else {
-                                        echo '<span class="text-danger">0 (Full)</span>';
-                                    }
-                                ?>
-                            </td>
-                            <td>$<?php echo number_format($loc->cost_per_hour, 2); ?></td>
-                            <td>
-                                <a href="<?php echo APP_URL; ?>/admin/edit-location.php?id=<?php echo $loc->id; ?>" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <a href="<?php echo APP_URL; ?>/admin/locations.php?delete=<?php echo $loc->id; ?>" 
-                                   class="btn btn-sm btn-danger" 
-                                   onclick="return confirm('Are you sure you want to delete this location?');">
-                                    <i class="fas fa-trash"></i> Delete
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>

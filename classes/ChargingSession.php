@@ -82,6 +82,9 @@ class ChargingSession {
         
         return $this->db->single();
     }
+
+
+    
     
     public function getAllActiveSessions() {
         $this->db->query('SELECT u.name AS user_name, cl.description AS location_name, cs.check_in_time 
@@ -109,4 +112,64 @@ class ChargingSession {
         
         return $this->db->resultSet();
     }
-}
+
+    /**
+     * Get all charging sessions for a specific user
+     * 
+     * @param int $userId The user ID
+     * @return array Array of charging sessions for the user
+     */
+    public function getUserChargingSessions($userId) {
+        $this->db->query("SELECT 
+                    cs.session_id, 
+                    cs.user_id, 
+                    cs.location_id, 
+                    cs.check_in_time AS start_time, 
+                    cs.check_out_time AS end_time, 
+                    cs.total_cost, 
+                    cs.status, 
+                    cl.description AS location_description, 
+                    cl.cost_per_hour
+                FROM 
+                    charging_sessions cs
+                JOIN 
+                    charging_locations cl ON cs.location_id = cl.location_id
+                WHERE 
+                    cs.user_id = :user_id
+                ORDER BY 
+                    cs.check_in_time DESC");
+        
+        $this->db->bind(':user_id', $userId);
+        
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Get the active charging session for a specific user if exists
+     * 
+     * @param int $userId The user ID
+     * @return array|null The active session data or null if no active session
+     */
+    public function getUserActiveSession($userId) {
+        $this->db->query("SELECT 
+                    cs.session_id, 
+                    cs.user_id, 
+                    cs.location_id, 
+                    cs.check_in_time AS start_time, 
+                    cs.status, 
+                    cl.description AS location_description, 
+                    cl.cost_per_hour
+                FROM 
+                    charging_sessions cs
+                JOIN 
+                    charging_locations cl ON cs.location_id = cl.location_id
+                WHERE 
+                    cs.user_id = :user_id 
+                    AND cs.status = 'active'
+                LIMIT 1");
+        
+        $this->db->bind(':user_id', $userId);
+        
+        return $this->db->single();
+    }
+    }

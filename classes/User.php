@@ -115,13 +115,18 @@ class User {
     
     // Get all users
     public function getAllUsers() {
-        $this->db->query('SELECT * FROM users ORDER BY user_id');
+        $this->db->query('
+        SELECT * FROM users 
+        where user_type != "Administrator"
+        ORDER BY user_id
+        '
+    );
         return $this->db->resultSet();
     }
     
     // Get users currently checked in
     public function getUsersCheckedIn() {
-        $this->db->query('SELECT u.*, cl.description, cs.check_in_time, cs.session_id 
+        $this->db->query('SELECT u.*, cl.description, cs.check_in_time, cs.session_id, cl.cost_per_hour
                          FROM users u 
                          JOIN charging_sessions cs ON u.user_id = cs.user_id 
                          JOIN charging_locations cl ON cs.location_id = cl.location_id 

@@ -74,17 +74,19 @@ class Location {
     
     // Get locations that are full (no available stations)
     public function getFullLocations() {
-        $this->db->query('SELECT cl.*, 
-                        (SELECT COUNT(*) FROM charging_sessions cs 
-                         WHERE cs.location_id = cl.location_id AND cs.status = "active") 
-                         AS active_sessions,
-                        (cl.num_stations - (SELECT COUNT(*) FROM charging_sessions cs 
-                                           WHERE cs.location_id = cl.location_id AND cs.status = "active")) 
-                         AS available_stations
+        $this->db->query('SELECT cl.location_id, 
+                         cl.description, 
+                         cl.num_stations, 
+                         cl.cost_per_hour,
+                         (SELECT COUNT(*) FROM charging_sessions cs
+                          WHERE cs.location_id = cl.location_id AND cs.status = "active")
+                          AS active_sessions,
+                         (cl.num_stations - (SELECT COUNT(*) FROM charging_sessions cs
+                                            WHERE cs.location_id = cl.location_id AND cs.status = "active"))
+                          AS available_stations
                         FROM charging_locations cl
-                        HAVING available_stations <= 0
                         ORDER BY cl.location_id');
-        
+                     
         return $this->db->resultSet();
     }
     
@@ -122,5 +124,23 @@ class Location {
         }
         
         return false;
+    }
+    public function deleteLocation($id) {
+        // First check if the location has any active sessions
+        $this->db->query('SELECT COUNT(*) as count FROM charging_sessions 
+                         WHERE location_id = :location_id AND status = "active"');
+        $this->db->bind(':location_id', $id);
+        $result = $this->db->single();
+        
+        if($result->count > 0) {
+            // Location has active sessions, can't delete
+            return false;
+        }
+        
+        // No active sessions, proceed with deletion
+        $this->db->query('DELETE FROM charging_locations WHERE location_id = :location_id');
+        $this->db->bind(':location_id', $id);
+        
+        return $this->db->execute();
     }
 }

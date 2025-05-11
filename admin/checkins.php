@@ -1,145 +1,225 @@
 <?php
+if (!defined("root")) {
+    define('root', $_SERVER['DOCUMENT_ROOT']);
+}
 // Initialize session
-require_once '../config/config.php';
-require_once '../classes/Database.php';
-require_once '../classes/Location.php';
-require_once '../classes/ChargingSession.php';
+require_once root . '/config/config.php';
+require_once root . '/classes/Database.php';
+require_once root . '/classes/User.php';
+require_once root . '/classes/ChargingSession.php';
+// Include header
+include_once root . '/includes/header.php';
 
-// Check if user is logged in and is a regular user
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'User') {
-    $_SESSION['flash_message'] = 'You must be logged in as a user to check-in';
+// Check if user is logged in and is an administrator
+if (!isLoggedIn()) {
+    $_SESSION['flash_message'] = 'You must be logged in as an administrator to view that page';
     $_SESSION['flash_type'] = 'danger';
-    header('Location: ' . APP_URL . '/auth/login.php');
+    header('Location: /login.php');
     exit;
 }
 
-$page_title = 'Check-in for Charging';
-
-// Create objects
-$location = new Location();
-$chargingSession = new ChargingSession();
-
-// Get available locations (those with at least one free station)
-$available_locations = $location->getAvailableLocations();
-$selected_location_id = '';
-$selected_location = null;
-$errors = [];
-
-// Process form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate location selection
-    $selected_location_id = isset($_POST['location_id']) ? trim($_POST['location_id']) : '';
-    
-    if (empty($selected_location_id)) {
-        $errors['location_id'] = 'Please select a charging location';
-    } else {
-        // Get location details
-        $selected_location = $location->getLocationById($selected_location_id);
-        
-        if (!$selected_location) {
-            $errors['location_id'] = 'Invalid location selected';
-        } else {
-            // Check if location has available stations
-            $available_stations = $location->getAvailableStations($selected_location_id);
-            
-            if ($available_stations <= 0) {
-                $errors['location_id'] = 'This location has no available charging stations';
-            }
-        }
-    }
-    
-    // If no errors, create a charging session
-    if (empty($errors)) {
-        $start_time = date('Y-m-d H:i:s');
-        $user_id = $_SESSION['user_id'];
-        
-        $data = [
-            'user_id' => $user_id,
-            'location_id' => $selected_location_id,
-            'start_time' => $start_time,
-            'status' => 'active'
-        ];
-        
-        if ($chargingSession->startChargingSession($data)) {
-            $_SESSION['flash_message'] = 'Check-in successful! Your charging session has started.';
-            $_SESSION['flash_type'] = 'success';
-            header('Location: ' . APP_URL . '/user/current.php');
-            exit;
-        } else {
-            $_SESSION['flash_message'] = 'Failed to check-in. Please try again.';
-            $_SESSION['flash_type'] = 'danger';
-        }
-    }
+if (!isAdmin()) {
+    $_SESSION['flash_message'] = 'You do not have permission to access this page';
+    $_SESSION['flash_type'] = 'danger';
+    header('Location: /index.php');
+    exit;
 }
 
-// Include header
-include_once '../includes/header.php';
+// Validate user_id parameter
+if (!isset($_GET['user_id']) || !is_numeric($_GET['user_id'])) {
+    $_SESSION['flash_message'] = 'Invalid user ID';
+    $_SESSION['flash_type'] = 'danger';
+    header('Location: /admin/manage_users.php');
+    exit;
+}
+
+$user_id = (int)$_GET['user_id'];
+
+// Create User and ChargingSession objects
+$user = new User();
+$chargingSession = new ChargingSession();
+
+// Get user information
+$userData = $user->getUserById($user_id);
+if (!$userData) {
+    $_SESSION['flash_message'] = 'User not found';
+    $_SESSION['flash_type'] = 'danger';
+    header('Location: /admin/manage_users.php');
+    exit;
+}
+
+// Get user's charging history
+$chargingHistory = $chargingSession->getUserChargingSessions($user_id);
+
+// Get user's current active session if any
+$activeSession = $chargingSession->getUserActiveSession($user_id);
+
+$page_title = 'User Detail: ' . htmlspecialchars($userData['name']);
 ?>
 
 <div class="row mb-4">
     <div class="col-md-8">
-        <h1>Check-in for Charging</h1>
+        <h1>User Detail: <?php echo htmlspecialchars($userData['name']); ?></h1>
     </div>
     <div class="col-md-4 text-end">
-        <a href="<?php echo APP_URL; ?>/user/my-dashboard.php" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        <a href="/admin/manage_users.php" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to User Management
         </a>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Select Charging Location</h5>
+<!-- User Information Card -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-user me-2"></i>User Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>ID:</strong> <?php echo $userData['user_id']; ?></p>
+                <p><strong>Name:</strong> <?php echo htmlspecialchars($userData['name']); ?></p>
+                <p><strong>Email:</strong> <?php echo htmlspecialchars($userData['email']); ?></p>
             </div>
-            <div class="card-body">
-                <?php if (empty($available_locations)): ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>No charging locations with available stations at the moment.
-                    </div>
-                <?php else: ?>
-                    <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
-                        <div class="mb-3">
-                            <label for="location_id" class="form-label">Available Charging Locations</label>
-                            <select class="form-select <?php echo isset($errors['location_id']) ? 'is-invalid' : ''; ?>" 
-                                   id="location_id" name="location_id" required>
-                                <option value="">-- Select a Location --</option>
-                                <?php foreach ($available_locations as $loc): ?>
-                                    <option value="<?php echo $loc['id']; ?>" 
-                                            <?php echo ($selected_location_id == $loc['id']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($loc['description']); ?> 
-                                        (<?php echo $loc['available_stations']; ?> stations available) - 
-                                        $<?php echo number_format($loc['cost_per_hour'], 2); ?>/hour
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <?php if (isset($errors['location_id'])) : ?>
-                                <div class="invalid-feedback">
-                                    <?php echo $errors['location_id']; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-info-circle me-3 fs-4"></i>
-                                <div>
-                                    <p class="mb-1">By checking in, you are starting a charging session that will be billed at the location's hourly rate.</p>
-                                    <p class="mb-0">Don't forget to check out when your charging is complete.</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plug me-2"></i>Check-in Now
-                            </button>
-                        </div>
-                    </form>
-                <?php endif; ?>
+            <div class="col-md-6">
+                <p><strong>Phone:</strong> <?php echo htmlspecialchars($userData['phone']); ?></p>
+                <p><strong>User Type:</strong> <span class="badge <?php echo $userData['user_type'] === 'Administrator' ? 'bg-danger' : 'bg-success'; ?>"><?php echo htmlspecialchars($userData['user_type']); ?></span></p>
+                <p><strong>Registration Date:</strong> <?php echo date('M d, Y', strtotime($userData['created_at'])); ?></p>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Active Charging Session (if exists) -->
+<?php if ($activeSession): ?>
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-plug me-2"></i>Current Active Session</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Location:</strong> <?php echo htmlspecialchars($activeSession['location_description']); ?></p>
+                <p><strong>Check-in Time:</strong> <?php echo date('M d, Y H:i', strtotime($activeSession['start_time'])); ?></p>
+            </div>
+            <div class="col-md-6">
+                <?php
+                    $start = new DateTime($activeSession['start_time']);
+                    $now = new DateTime();
+                    $interval = $start->diff($now);
+                    $hours = $interval->h + ($interval->i / 60) + ($interval->s / 3600) + ($interval->days * 24);
+                    $cost = $hours * $activeSession['cost_per_hour'];
+                ?>
+                <p><strong>Duration:</strong>
+                    <?php
+                    if ($interval->d > 0) {
+                        echo $interval->format('%d days, %h hrs, %i mins');
+                    } else {
+                        echo $interval->format('%h hrs, %i mins');
+                    }
+                    ?>
+                </p>
+                <p><strong>Current Cost:</strong> $<?php echo number_format($cost, 2); ?></p>
+                <p><strong>Rate:</strong> $<?php echo number_format($activeSession['cost_per_hour'], 2); ?>/hour</p>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Charging History -->
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Charging History</h5>
+    </div>
+    <div class="card-body">
+        <?php if (empty($chargingHistory)): ?>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No charging history found for this user.
+            </div>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered" id="historyTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Session ID</th>
+                            <th>Location</th>
+                            <th>Check-in Time</th>
+                            <th>Check-out Time</th>
+                            <th>Duration</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($chargingHistory as $session): ?>
+                            <tr>
+                                <td><?php echo $session['session_id']; ?></td>
+                                <td><?php echo htmlspecialchars($session['location_description']); ?></td>
+                                <td><?php echo date('M d, Y H:i', strtotime($session['start_time'])); ?></td>
+                                <td>
+                                    <?php 
+                                    if ($session['end_time']) {
+                                        echo date('M d, Y H:i', strtotime($session['end_time']));
+                                    } else {
+                                        echo '<span class="badge bg-warning text-dark">Active</span>';
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    if ($session['end_time']) {
+                                        $start = new DateTime($session['start_time']);
+                                        $end = new DateTime($session['end_time']);
+                                        $interval = $start->diff($end);
+                                        
+                                        if ($interval->d > 0) {
+                                            echo $interval->format('%d days, %h hrs, %i mins');
+                                        } else {
+                                            echo $interval->format('%h hrs, %i mins');
+                                        }
+                                    } else {
+                                        // For active sessions, calculate from start to now
+                                        $start = new DateTime($session['start_time']);
+                                        $now = new DateTime();
+                                        $interval = $start->diff($now);
+                                        
+                                        if ($interval->d > 0) {
+                                            echo $interval->format('%d days, %h hrs, %i mins') . ' (ongoing)';
+                                        } else {
+                                            echo $interval->format('%h hrs, %i mins') . ' (ongoing)';
+                                        }
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    if ($session['total_cost']) {
+                                        echo '$' . number_format($session['total_cost'], 2);
+                                    } else {
+                                        // Calculate current cost for active sessions
+                                        $hours = $interval->h + ($interval->i / 60) + ($interval->s / 3600) + ($interval->days * 24);
+                                        $cost = $hours * $session['cost_per_hour'];
+                                        echo '$' . number_format($cost, 2) . ' (ongoing)';
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Add DataTables initialization if you have DataTables library -->
+            <script>
+                $(document).ready(function() {
+                    if ($.fn.DataTable) {
+                        $('#historyTable').DataTable({
+                            "order": [[2, "desc"]], // Sort by start time by default
+                            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
+                        });
+                    }
+                });
+            </script>
+        <?php endif; ?>
     </div>
 </div>
 
