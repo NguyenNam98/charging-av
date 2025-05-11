@@ -1,5 +1,4 @@
 <?php
-// Initialize & bootstrap
 if ( ! defined("root") ) {
     define('root', $_SERVER['DOCUMENT_ROOT']);
 }
@@ -7,6 +6,8 @@ require_once (root . '/config/config.php');
 require_once (root . '/classes/Database.php');
 require_once (root . '/classes/User.php');
 require_once (root . '/includes/header.php');
+require_once 'includes/auth.php';
+
 
 requireLogin();  // your helper to guard access
 
@@ -61,11 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="row mb-4">
   <div class="col-8"><h1>My Profile</h1></div>
-  <div class="col-4 text-end">
-    <a href="change-password.php" class="btn btn-warning">
-      <i class="fas fa-key me-1"></i>Change Password
-    </a>
-  </div>
 </div>
 
 <?php if (isset($_SESSION['message'])): ?>
@@ -104,11 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            value="<?= htmlspecialchars($_SESSION['user_type']) ?>">
   </div>
 
-  <div class="col-12">
-    <button type="submit" class="btn btn-primary">
-      <i class="fas fa-save me-1"></i>Save Profile
-    </button>
-  </div>
+  <div class="col-12 d-flex justify-content-end gap-2">
+  <button type="submit" class="btn btn-primary">
+    <i class="fas fa-save me-1"></i>Save Profile
+  </button>
+  <a href="change-password.php" class="btn btn-warning">
+    <i class="fas fa-key me-1"></i>Change Password
+  </a>
+</div>
 </form>
 
 <?php include_once (root . '/includes/footer.php'); ?>

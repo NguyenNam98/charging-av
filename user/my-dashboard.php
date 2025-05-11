@@ -7,6 +7,7 @@ date_default_timezone_set(timezoneId: 'Australia/Sydney');
 $page_title = 'My Dashboard';
 require_once (root . '/includes/header.php');
 
+
 // Require login
 requireLogin();
 

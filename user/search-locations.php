@@ -5,6 +5,7 @@ if ( ! defined("root") ) {
 }
 require_once (root . '/includes/header.php');
 
+
 // Initialize location object
 $location = new Location();
 

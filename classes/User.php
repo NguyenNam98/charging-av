@@ -99,7 +99,12 @@ class User {
             return false;
         }
     }
-    
+    // get total users
+    public function getTotalUsers() {
+        $this->db->query('SELECT COUNT(*) AS total FROM users');
+        $row = $this->db->single();
+        return $row ? (int)$row['total'] : 0;
+    }
     // Get user by ID
     public function getUserById($id) {
         $this->db->query('SELECT * FROM users WHERE user_id = :id');

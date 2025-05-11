@@ -1,6 +1,8 @@
 <?php
 $page_title = 'Register';
 require_once 'includes/header.php';
+require_once 'includes/auth.php';
+
 
 // Redirect if already logged in
 if(isLoggedIn()) {

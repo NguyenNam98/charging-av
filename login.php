@@ -1,12 +1,15 @@
 <?php
 $page_title = 'Login';
 require_once 'includes/header.php';
+require_once 'includes/auth.php';
+
 
 // Redirect if already logged in
 if(isLoggedIn()) {
     header('Location: index.php');
     exit;
 }
+
 
 // Initialize variables
 $email = '';
@@ -37,7 +40,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['message_type'] = 'success';
             
             if($loggedInUser['user_type'] == 'Administrator') {
-                header('Location: admin_locations.php');
+                header('Location: /admin/index.php');
             } else {
                 header('Location: /user/my-dashboard.php');
             }

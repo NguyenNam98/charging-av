@@ -4,6 +4,7 @@ if ( ! defined("root") ) {
   }
 require_once (root .'/includes/header.php');
 
+
 // Require login
 requireLogin();
 

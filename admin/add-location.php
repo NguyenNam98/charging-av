@@ -8,7 +8,7 @@ require_once '../classes/Location.php';
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'Administrator') {
     $_SESSION['flash_message'] = 'You must be logged in as an administrator to view that page';
     $_SESSION['flash_type'] = 'danger';
-    header('Location: ' . APP_URL . '/auth/login.php');
+    header('Location:  /auth/login.php');
     exit;
 }
 
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($location->addLocation($data)) {
             $_SESSION['flash_message'] = 'Location added successfully!';
             $_SESSION['flash_type'] = 'success';
-            header('Location: ' . APP_URL . '/admin/locations.php');
+            header('Location: /admin/locations.php');
             exit;
         } else {
             $_SESSION['flash_message'] = 'Failed to add location. Please try again.';

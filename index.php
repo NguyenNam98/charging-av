@@ -2,9 +2,15 @@
 $page_title = 'Home';
 require_once 'includes/header.php';
 
+if(isLoggedIn() && isAdmin()) {
+    header('Location: /admin/index.php');
+    exit;
+}
+
 // Initialize location object
 $location = new Location();
 $availableLocations = $location->getAvailableLocations();
+
 ?>
 
 <div class="row">
@@ -32,7 +38,7 @@ $availableLocations = $location->getAvailableLocations();
                                 <h3>Manage Your Account</h3>
                                 <p>Register or login to track your charging history and check in/out at stations.</p>
                                 <?php if(isLoggedIn()) : ?>
-                                    <a href="<?php echo isAdmin() ? '/admin/admin_locations.php' : '/user/my-dashboard.php'; ?>" class="btn btn-success">Go to Dashboard</a>
+                                    <a href="<?php echo isAdmin() ? '/admin/locations.php' : '/user/my-dashboard.php'; ?>" class="btn btn-success">Go to Dashboard</a>
                                 <?php else : ?>
                                     <a href="login.php" class="btn btn-success">Login / Register</a>
                                 <?php endif; ?>

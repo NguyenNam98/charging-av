@@ -83,6 +83,21 @@ class ChargingSession {
         return $this->db->single();
     }
     
+    public function getAllActiveSessions() {
+        $this->db->query('SELECT u.name AS user_name, cl.description AS location_name, cs.check_in_time 
+                          FROM charging_sessions cs
+                          JOIN users u ON cs.user_id = u.user_id
+                          JOIN charging_locations cl ON cs.location_id = cl.location_id
+                          WHERE cs.status = "active"
+                          ORDER BY cs.check_in_time DESC');
+        return $this->db->resultSet();
+    }
+    // Get total number of active charging sessions
+    public function getTotalActiveSessions() {
+        $this->db->query('SELECT COUNT(*) AS total FROM charging_sessions WHERE status = "active"');
+        $row = $this->db->single();
+        return $row ? (int)$row['total'] : 0;
+    }
     // Get user's past sessions
     public function getUserPastSessions($userId) {
         $this->db->query('SELECT cs.*, cl.description 

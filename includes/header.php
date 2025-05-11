@@ -108,14 +108,44 @@ function requireAdmin() {
                             </li>
                         <?php endif; ?>
                         
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link" href="/profile.php">Profile (<?php echo $_SESSION['name']; ?>)</a>
                         </li>
                         <li class="nav-item">
                             <a href="/logout.php" class="nav-link btn btn-primary text-white">
                                 Logout
                             </a>
-                        </li>
+                        </li> -->
+                        <li class="nav-item dropdown">
+                            <a 
+                                class="nav-link dropdown-toggle p-0" 
+                                href="#" 
+                                id="userDropdown" 
+                                role="button" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false"
+                            >
+                            <img 
+                            src="https://avatar.iran.liara.run/public" 
+                            alt="Avatar" 
+                            class="rounded-circle" 
+                            width="32" 
+                            height="32"
+                            />
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                <a class="dropdown-item" href="/profile.php">
+                                    Profile (<?php echo htmlspecialchars($_SESSION['name'], ENT_QUOTES); ?>)
+                                </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="/logout.php">Logout</a>
+                                </li>
+                            </ul>
+                            </li>
+
                     <?php else : ?>
                         <li class="nav-item">
                             <a class="nav-link" href="/login.php">Login</a>

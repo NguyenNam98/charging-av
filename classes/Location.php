@@ -49,6 +49,13 @@ class Location {
         return $this->db->resultSet();
     }
     
+
+    // Get total number of locations
+    public function getTotalLocation() {
+        $this->db->query(query: 'SELECT COUNT(*) AS total FROM charging_locations');
+        $row = $this->db->single();
+        return $row ? (int)$row['total'] : 0;
+    }
     // Get locations with available stations
     public function getAvailableLocations() {
         $this->db->query('SELECT cl.*, 

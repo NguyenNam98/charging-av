@@ -1,24 +1,34 @@
 <?php
+
+if ( ! defined("root") ) {
+    define('root', $_SERVER['DOCUMENT_ROOT']);
+}
 // Admin Dashboard
-require_once '../config/config.php';
-require_once '../classes/Database.php';
-require_once '../classes/User.php';
-require_once '../classes/Location.php';
-require_once '../classes/Charging.php';
+require_once root .'/config/config.php';
+require_once root .'/classes/Database.php';     
+require_once root .'/classes/User.php';
+require_once root .'/classes/Location.php';
+require_once root .'/classes/ChargingSession.php';
+
+date_default_timezone_set(timezoneId: 'Australia/Sydney');
 
 // Check if user is logged in and is an administrator
 if(!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 'Administrator') {
     $_SESSION['flash_message'] = 'Unauthorized access. Please login as administrator.';
     $_SESSION['flash_type'] = 'danger';
-    header('Location: ' . APP_URL . '/auth/login.php');
+    header('Location:  /auth/login.php');
     exit();
 }
 
 $page_title = 'Admin Dashboard';
+$users = new User();
+$locations = new Location();
+$chargingSession = new ChargingSession();
+$recent_checkins = $chargingSession->getAllActiveSessions();
 
 
 // Include header
-include_once '../includes/header.php';
+include_once root .'/includes/header.php';
 ?>
 
 <div class="row mb-4">
@@ -33,10 +43,10 @@ include_once '../includes/header.php';
         <div class="card bg-primary text-white mb-4">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-users me-2"></i> Total Users</h5>
-                <h2 class="display-4"><?php echo $total_users; ?></h2>
+                <h2 class="display-4"><?php echo $users->getTotalUsers(); ?></h2>
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="<?php echo APP_URL; ?>/admin/users.php">View Details</a>
+                <a class="small text-white stretched-link" href="<?php echo '/'; ?>/admin/users.php">View Details</a>
                 <div class="small text-white"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>
@@ -45,10 +55,10 @@ include_once '../includes/header.php';
         <div class="card bg-success text-white mb-4">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-map-marker-alt me-2"></i> Total Locations</h5>
-                <h2 class="display-4"><?php echo $total_locations; ?></h2>
+                <h2 class="display-4"><?php echo $locations->getTotalLocation(); ?></h2>
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="<?php echo APP_URL; ?>/admin/locations.php">View Details</a>
+                <a class="small text-white stretched-link" href="<?php ?>/admin/locations.php">View Details</a>
                 <div class="small text-white"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>
@@ -57,10 +67,10 @@ include_once '../includes/header.php';
         <div class="card bg-warning text-white mb-4">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-plug me-2"></i> Active Charging Sessions</h5>
-                <h2 class="display-4"><?php echo $active_sessions; ?></h2>
+                <h2 class="display-4"><?php echo $chargingSession->getTotalActiveSessions(); ?></h2>
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="<?php echo APP_URL; ?>/admin/checkins.php">View Details</a>
+                <a class="small text-white stretched-link" href="<?php ?>/admin/checkins.php">View Details</a>
                 <div class="small text-white"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>
@@ -87,26 +97,23 @@ include_once '../includes/header.php';
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach($recent_checkins as $checkin): ?>
-                                    <?php 
-                                    // Calculate duration
-                                    $check_in_time = new DateTime($checkin->check_in_time);
-                                    $current_time = new DateTime();
-                                    $interval = $check_in_time->diff($current_time);
-                                    
-                                    if ($interval->days > 0) {
-                                        $duration = $interval->format('%d days, %h hours, %i minutes');
-                                    } else {
-                                        $duration = $interval->format('%h hours, %i minutes');
-                                    }
-                                    ?>
-                                    <tr>
-                                        <td><?php echo $checkin->user_name; ?></td>
-                                        <td><?php echo $checkin->location_name; ?></td>
-                                        <td><?php echo date('M d, Y h:i A', strtotime($checkin->check_in_time)); ?></td>
-                                        <td><?php echo $duration; ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
+                            <?php foreach($recent_checkins as $checkin): ?>
+                                <?php 
+                                $check_in_time = new DateTime($checkin['check_in_time'] ?? 'now');
+                                $current_time = new DateTime();
+                                $interval = $check_in_time->diff($current_time);
+                                
+                                $duration = $interval->days > 0
+                                    ? $interval->format('%d days, %h hours, %i minutes')
+                                    : $interval->format('%h hours, %i minutes');
+                                ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($checkin['user_name'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($checkin['location_name'] ?? 'N/A'); ?></td>
+                                    <td><?php echo isset($checkin['check_in_time']) ? date('M d, Y h:i A', strtotime($checkin['check_in_time'])) : 'N/A'; ?></td>
+                                    <td><?php echo $duration; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -115,7 +122,7 @@ include_once '../includes/header.php';
                 <?php endif; ?>
             </div>
             <div class="card-footer small text-muted">
-                <a href="<?php echo APP_URL; ?>/admin/checkins.php" class="btn btn-primary btn-sm">
+                <a href="<?php ?>/admin/checkins.php" class="btn btn-primary btn-sm">
                     <i class="fas fa-list me-1"></i> View All Active Sessions
                 </a>
             </div>
@@ -132,16 +139,16 @@ include_once '../includes/header.php';
             </div>
             <div class="card-body">
                 <div class="list-group">
-                    <a href="<?php echo APP_URL; ?>/admin/add-location.php" class="list-group-item list-group-item-action">
+                    <a href="<?php ?>/admin/add-location.php" class="list-group-item list-group-item-action">
                         <i class="fas fa-plus-circle me-2"></i> Add New Charging Location
                     </a>
-                    <a href="<?php echo APP_URL; ?>/admin/locations.php" class="list-group-item list-group-item-action">
+                    <a href="<?php  ?>/admin/locations.php" class="list-group-item list-group-item-action">
                         <i class="fas fa-map-marker-alt me-2"></i> Manage Charging Locations
                     </a>
-                    <a href="<?php echo APP_URL; ?>/admin/users.php" class="list-group-item list-group-item-action">
+                    <a href="<?php ?>/admin/users.php" class="list-group-item list-group-item-action">
                         <i class="fas fa-users me-2"></i> Manage Users
                     </a>
-                    <a href="<?php echo APP_URL; ?>/search.php" class="list-group-item list-group-item-action">
+                    <a href="<?php  ?>/search.php" class="list-group-item list-group-item-action">
                         <i class="fas fa-search me-2"></i> Search
                     </a>
                 </div>

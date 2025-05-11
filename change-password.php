@@ -8,6 +8,7 @@ require_once (root . '/classes/Database.php');
 require_once (root . '/classes/User.php');
 require_once (root . '/includes/header.php');
 
+
 requireLogin();
 
 $page_title = 'Change Password';
@@ -55,11 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="row mb-4">
   <div class="col-8"><h1>Change Password</h1></div>
-  <div class="col-4 text-end">
-    <a href="profile.php" class="btn btn-secondary">
-      <i class="fas fa-arrow-left me-1"></i>Back to Profile
-    </a>
-  </div>
 </div>
 
 <?php if (isset($_SESSION['message'])): ?>
@@ -96,6 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <button type="submit" class="btn btn-warning">
       <i class="fas fa-key me-1"></i>Change Password
     </button>
+    <a href="profile.php" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-1"></i>Back to Profile
+    </a>
   </div>
 </form>
 

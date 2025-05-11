@@ -23,7 +23,7 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
         $_SESSION['flash_type'] = 'danger';
     }
     
-    header('Location: ' . APP_URL . '/admin/locations.php');
+    header('Location: /admin/locations.php');
     exit;
 }
 
