@@ -54,20 +54,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         $data = [
-            'id' => $location_id,
+            'location_id' => $location_id,
             'description' => $description,
-            'number_of_stations' => $number_of_stations,
+            'num_stations' => $number_of_stations,
             'cost_per_hour' => $cost_per_hour
         ];
 
         if ($location->updateLocation($data)) {
-            $_SESSION['flash_message'] = 'Location updated successfully!';
-            $_SESSION['flash_type'] = 'success';
+            $_SESSION['message'] = 'Location updated successfully!';
+            $_SESSION['message_type'] = 'success';
             header('Location: /admin/locations.php');
             exit;
         } else {
-            $_SESSION['flash_message'] = 'Failed to update location. Please try again.';
-            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['message'] = 'Failed to update location. Please try again.';
+            $_SESSION['message_type'] = 'danger';
         }
     }
 }
@@ -94,16 +94,6 @@ include_once '../includes/header.php';
             </a>
         </div>
     </div>
-
-    <?php if (isset($_SESSION['flash_message'])): ?>
-        <div class="alert alert-<?php echo $_SESSION['flash_type']; ?> alert-dismissible fade show" role="alert">
-            <?php 
-                echo $_SESSION['flash_message']; 
-                unset($_SESSION['flash_message'], $_SESSION['flash_type']);
-            ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
 
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
@@ -176,22 +166,5 @@ include_once '../includes/header.php';
     </div>
 </div>
 
-<script>
-(function () {
-    'use strict';
-    window.addEventListener('load', function () {
-        const forms = document.getElementsByClassName('needs-validation');
-        Array.prototype.forEach.call(forms, function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            }, false);
-        });
-    }, false);
-})();
-</script>
 
 <?php include_once '../includes/footer.php'; ?>

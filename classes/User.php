@@ -7,11 +7,11 @@ class User {
     }
     
     public function emailExists($email) {
-        $query = "SELECT COUNT(*) FROM users WHERE email = :email";
+        $query = "SELECT COUNT(*) as count FROM users WHERE email = :email";
         $this->db->query($query);
         $this->db->bind(':email', $email, PDO::PARAM_STR);
-        $row = $this->db->single();
-        return $row ? true : false;
+        $row = $this->db->single();;
+        return isset($row['count']) && $row['count'] > 0;
     }
 
     public function updateUser($data) {
@@ -55,13 +55,13 @@ class User {
      * @return bool True on success, false on failure.
      */
     public function updatePassword($data) {
-
         $query = "UPDATE users SET password = :password WHERE user_id = :id";
+
         $this->db->query($query);
         $this->db->bind(':password', password_hash($data['password'], PASSWORD_DEFAULT));
-        $this->db->bind(':user_id', $data['id']);
+        $this->db->bind(':id', $data['user_id']);
           // Execute
-          if($this->db->execute()) {
+        if($this->db->execute()) {
             return true;
         } else {
             return false;

@@ -8,7 +8,27 @@ $page_title = 'Manage Locations';
 
 // Create Location object
 $location = new Location();
-$locations = $location->getFullLocations();
+
+// Get filter status from query parameters
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+
+// Get locations based on filter
+switch ($filter) {
+    case 'available':
+        $locations = $location->getAvailableLocations();
+        break;
+    case 'full':
+        // Get all locations and filter for full ones
+        $allLocations = $location->getFullLocations();
+        $locations = array_filter($allLocations, function($loc) {
+            return isset($loc['available_stations']) && intval($loc['available_stations']) <= 0;
+        });
+        break;
+    case 'all':
+    default:
+        $locations = $location->getFullLocations();
+        break;
+}
 
 // Handle delete location
 if (isset($_GET['delete']) && !empty($_GET['delete'])) {
@@ -23,7 +43,8 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
         $_SESSION['flash_type'] = 'danger';
     }
     
-    header('Location: /admin/locations.php');
+    // Preserve the filter when redirecting
+    header('Location: /admin/locations.php' . ($filter !== 'all' ? '?filter=' . $filter : ''));
     exit;
 }
 
@@ -32,13 +53,28 @@ include_once '../includes/header.php';
 ?>
 
 <div class="row mb-4">
-    <div class="col-md-8">
+    <div class="col-md-6">
         <h1>Manage Charging Locations</h1>
     </div>
-    <div class="col-md-4 text-end">
-        <a href="/admin/add-location.php" class="btn btn-primary">
-            <i class="fas fa-plus-circle me-2"></i>Add New Location
-        </a>
+    <div class="col-md-6 text-end">
+        <div class="d-flex justify-content-end">
+            <div class="me-3">
+                <div class="btn-group" role="group" aria-label="Filter locations">
+                    <a href="/admin/locations.php" class="btn btn-outline-secondary <?php echo $filter === 'all' ? 'active' : ''; ?>">
+                        All Locations
+                    </a>
+                    <a href="/admin/locations.php?filter=available" class="btn btn-outline-success <?php echo $filter === 'available' ? 'active' : ''; ?>">
+                        Available
+                    </a>
+                    <a href="/admin/locations.php?filter=full" class="btn btn-outline-danger <?php echo $filter === 'full' ? 'active' : ''; ?>">
+                        Full
+                    </a>
+                </div>
+            </div>
+            <a href="/admin/add-location.php" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Add New Location
+            </a>
+        </div>
     </div>
 </div>
 
@@ -55,8 +91,14 @@ include_once '../includes/header.php';
 <?php endif; ?>
 
 <div class="card mb-4">
-    <div class="card-header bg-light">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Charging Locations</h5>
+        <span class="badge bg-<?php echo $filter === 'available' ? 'success' : ($filter === 'full' ? 'danger' : 'secondary'); ?>">
+            <?php 
+                echo $filter === 'available' ? 'Available Locations' : 
+                    ($filter === 'full' ? 'Full Locations' : 'All Locations'); 
+            ?>
+        </span>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -97,7 +139,7 @@ include_once '../includes/header.php';
                                     <a href="/admin/edit-location.php?id=<?php echo isset($loc['location_id']) ? $loc['location_id'] : ''; ?>" class="btn btn-sm btn-primary">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
-                                    <a href="/admin/locations.php?delete=<?php echo isset($loc['location_id']) ? $loc['location_id'] : ''; ?>" 
+                                    <a href="/admin/locations.php?delete=<?php echo isset($loc['location_id']) ? $loc['location_id'] : ''; ?><?php echo $filter !== 'all' ? '&filter=' . $filter : ''; ?>" 
                                        class="btn btn-sm btn-danger" 
                                        onclick="return confirm('Are you sure you want to delete this location?');">
                                         <i class="fas fa-trash"></i> Delete

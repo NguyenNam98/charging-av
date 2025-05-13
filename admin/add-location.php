@@ -54,13 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         
         if ($location->addLocation($data)) {
-            $_SESSION['flash_message'] = 'Location added successfully!';
-            $_SESSION['flash_type'] = 'success';
+            $_SESSION['message'] = 'Location added successfully!';
+            $_SESSION['message_type'] = 'success';
             header('Location: /admin/locations.php');
             exit;
         } else {
-            $_SESSION['flash_message'] = 'Failed to add location. Please try again.';
-            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['message'] = 'Failed to add location. Please try again.';
+            $_SESSION['message_type'] = 'danger';
         }
     }
 }
@@ -88,18 +88,6 @@ include_once '../includes/header.php';
             </a>
         </div>
     </div>
-
-    <!-- Display flash message if set -->
-    <?php if(isset($_SESSION['flash_message'])) : ?>
-        <div class="alert alert-<?php echo $_SESSION['flash_type']; ?> alert-dismissible fade show" role="alert">
-            <?php 
-            echo $_SESSION['flash_message']; 
-            unset($_SESSION['flash_message']);
-            unset($_SESSION['flash_type']);
-            ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
 
     <div class="row">
         <div class="col-lg-8 col-md-10 mx-auto">

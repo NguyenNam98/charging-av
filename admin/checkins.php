@@ -12,23 +12,23 @@ include_once root . '/includes/header.php';
 
 // Check if user is logged in and is an administrator
 if (!isLoggedIn()) {
-    $_SESSION['flash_message'] = 'You must be logged in as an administrator to view that page';
-    $_SESSION['flash_type'] = 'danger';
+    $_SESSION['message'] = 'You must be logged in as an administrator to view that page';
+    $_SESSION['message_type'] = 'danger';
     header('Location: /login.php');
     exit;
 }
 
 if (!isAdmin()) {
-    $_SESSION['flash_message'] = 'You do not have permission to access this page';
-    $_SESSION['flash_type'] = 'danger';
+    $_SESSION['message'] = 'You do not have permission to access this page';
+    $_SESSION['message_type'] = 'danger';
     header('Location: /index.php');
     exit;
 }
 
 // Validate user_id parameter
 if (!isset($_GET['user_id']) || !is_numeric($_GET['user_id'])) {
-    $_SESSION['flash_message'] = 'Invalid user ID';
-    $_SESSION['flash_type'] = 'danger';
+    $_SESSION['message'] = 'Invalid user ID';
+    $_SESSION['message_type'] = 'danger';
     header('Location: /admin/manage_users.php');
     exit;
 }
@@ -42,8 +42,8 @@ $chargingSession = new ChargingSession();
 // Get user information
 $userData = $user->getUserById($user_id);
 if (!$userData) {
-    $_SESSION['flash_message'] = 'User not found';
-    $_SESSION['flash_type'] = 'danger';
+    $_SESSION['message'] = 'User not found';
+    $_SESSION['message_type'] = 'danger';
     header('Location: /admin/manage_users.php');
     exit;
 }

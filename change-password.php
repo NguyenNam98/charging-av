@@ -10,7 +10,8 @@ require_once (root . '/includes/header.php');
 
 
 requireLogin();
-
+// 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character, at least 8 characters long
+$passwordPattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/';
 $page_title = 'Change Password';
 $user = new User();
 $userData = $user->getUserById($_SESSION['user_id']);
@@ -18,37 +19,39 @@ $userData = $user->getUserById($_SESSION['user_id']);
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current = $_POST['current_password'];
-    $new     = $_POST['new_password'];
-    $confirm = $_POST['confirm_password'];
+    $newPassword    = $_POST['new_password'];
+    $confirmPassword = $_POST['confirm_password'];
 
     // validate current
-    if ($current === '') {
-        $errors['current_password'] = 'Please enter current password';
+    if (!preg_match($passwordPattern, $current)) {
+        $errors['current_password'] = 'Current password must contain at least 8 characters, including 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character';
     } elseif (! password_verify($current, $userData['password'])) {
         $errors['current_password'] = 'Incorrect current password';
     }
 
-    // validate new
-    if (strlen($new) < 8) {
-        $errors['new_password'] = 'At least 8 characters';
+    // validate new password
+    if (!preg_match($passwordPattern, $newPassword)) {
+        $errors['new_password'] = 'New password must contain at least 8 characters, including 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character';
     }
-    if ($new !== $confirm) {
-        $errors['confirm_password'] = 'Passwords must match';
+    // check if new password matches the confirm password
+    if ($newPassword !== $confirmPassword) {
+        $errors['confirm_password'] = 'Passwords must match ';
     }
 
     if (empty($errors)) {
-        $ok = $user->updatePassword([
-            'id'       => $_SESSION['user_id'],
-            'password' => password_hash($new, PASSWORD_DEFAULT)
+        $isUpdateSucceed = $user->updatePassword([
+            'user_id'       => $_SESSION['user_id'],
+            'password' => $newPassword
         ]);
-        if ($ok) {
+        if ($isUpdateSucceed) {
             $_SESSION['message'] = 'Password changed!';
-            $_SESSION['type']    = 'success';
-            header('Location: profile.php');
+            $_SESSION['message_type']    = 'success';
+            echo '<script>window.location.href = "/profile.php";</script>';
+
             exit;
         } else {
             $_SESSION['message'] = 'Update failed.';
-            $_SESSION['type']    = 'danger';
+            $_SESSION['message_type']    = 'danger';
         }
     }
 }
@@ -58,12 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="col-8"><h1>Change Password</h1></div>
 </div>
 
-<?php if (isset($_SESSION['message'])): ?>
-  <div class="alert alert-<?=$_SESSION['type']?>">
-    <?= $_SESSION['message'] ?>
-  </div>
-  <?php unset($_SESSION['message'], $_SESSION['type']); ?>
-<?php endif; ?>
 
 <form method="post" class="row g-3">
   <div class="col-md-4">

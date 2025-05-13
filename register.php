@@ -1,8 +1,6 @@
 <?php
 $page_title = 'Register';
 require_once 'includes/header.php';
-require_once 'includes/auth.php';
-
 
 // Redirect if already logged in
 if(isLoggedIn()) {
@@ -17,7 +15,17 @@ $phone = '';
 $password = '';
 $confirm_password = '';
 $user_type = 'User'; // Default to regular user
-$errors = [];
+// 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character, at least 8 characters long
+$passwordPattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/';
+
+$errors = [
+    'name' => '',
+    'email' => '',
+    'phone' => '',
+    'password' => '',
+    'confirm_password' => '',
+    'general' => [],
+];
 
 // Process form submission
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -29,54 +37,71 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $confirm_password = trim($_POST['confirm_password']);
     $user_type = isset($_POST['user_type']) ? trim($_POST['user_type']) : 'User';
 
+    $user = new User();
     // Validate form data
     if(empty($name)) {
-        $errors[] = 'Name is required';
+        $errors['name'] = 'Name is required';
     }
     
-    if(empty($email)) {
-        $errors[] = 'Email is required';
-    } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Email is not valid';
+    if(empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'Email is not valid';
+    } 
+
+    if ($user->emailExists($email)) {
+        $errors['email'] = 'Email is already registered';
     }
     
     if(empty($phone)) {
-        $errors[] = 'Phone number is required';
+        $errors['phone'] = 'Phone number is required';
     }
     
-    if(empty($password)) {
-        $errors[] = 'Password is required';
-    } elseif(strlen($password) < 6) {
-        $errors[] = 'Password must be at least 6 characters';
+    if(empty($password) || !preg_match($passwordPattern, $password)) {
+        $errors['password'] = 'Password must contain at least 8 characters, including 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character';
     }
     
     if($password != $confirm_password) {
-        $errors[] = 'Passwords do not match';
+        $errors['confirm_password'] = 'Passwords do not match';
     }
     
-    // Check if email already exists
-    $user = new User();
+
     if($user->findUserByEmail($email)) {
-        $errors[] = 'Email is already registered';
+        $errors['email'] = 'Email is already registered';
     }
     
     // If no errors, register user
-    if(empty($errors)) {
-        if($user->register([
+    if(!array_filter($errors)) {
+        $registrationSuccess = $user->register([
             'name' => $name,
             'email' => $email,
             'phone' => $phone,
             'password' => $password,
             'user_type' => $user_type
-        ])) {
+        ]);
+
+        if ($registrationSuccess) {
             $_SESSION['message'] = 'Registration successful! You can now login.';
             $_SESSION['message_type'] = 'success';
             header('Location: login.php');
             exit;
         } else {
-            $errors[] = 'Something went wrong';
+            $errors['general'][] = 'Something went wrong during registration. Please try again.';
         }
     }
+}
+
+// Helper function to display error messages
+function displayError($field) {
+    global $errors;
+    if (!empty($errors[$field])) {
+        return '<div class="invalid-feedback d-block">' . $errors[$field] . '</div>';
+    }
+    return '';
+}
+
+// Helper function to mark a field as invalid if it has errors
+function getInputClass($field) {
+    global $errors;
+    return !empty($errors[$field]) ? 'form-control is-invalid' : 'form-control';
 }
 ?>
 
@@ -87,39 +112,43 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <h4 class="m-0">Register</h4>
             </div>
             <div class="card-body">
-                <?php if(!empty($errors)) : ?>
+            <?php if(!empty($errors['general'])) : ?>
                     <div class="alert alert-danger">
                         <ul class="mb-0">
-                            <?php foreach($errors as $error) : ?>
+                            <?php foreach($errors['general'] as $error) : ?>
                                 <li><?php echo $error; ?></li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
                 <?php endif; ?>
-                
-                <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="POST">
+                <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="POST" novalidate>
                     <div class="mb-3">
-                        <label for="name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>" required>
+                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="<?php echo getInputClass('name'); ?>" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>" required>
+                        <?php echo displayError('name'); ?>
                     </div>
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" required>
+                        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="<?php echo getInputClass('email'); ?>" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" required>
+                        <?php echo displayError('email'); ?>
                     </div>
                     <div class="mb-3">
-                        <label for="phone" class="form-label">Phone</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($phone); ?>" required>
+                        <label for="phone" class="form-label">Phone <span class="text-danger">*</span></label>
+                        <input type="tel" class="<?php echo getInputClass('phone'); ?>" id="phone" name="phone" value="<?php echo htmlspecialchars($phone); ?>" required>
+                        <?php echo displayError('phone'); ?>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="password" class="<?php echo getInputClass('password'); ?>" id="password" name="password" required>
+                        <?php echo displayError('password'); ?>
                     </div>
                     <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <label for="confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                        <input type="password" class="<?php echo getInputClass('confirm_password'); ?>" id="confirm_password" name="confirm_password" required>
+                        <?php echo displayError('confirm_password'); ?>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">User Type</label>
+                        <label class="form-label">User Type <span class="text-danger">*</span></label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="user_type" id="user_type_user" value="User" <?php echo $user_type == 'User' ? 'checked' : ''; ?>>

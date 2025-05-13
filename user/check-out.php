@@ -1,16 +1,14 @@
-<?php
+   <?php
 if ( ! defined("root") ) {
     define('root', $_SERVER['DOCUMENT_ROOT']);
   }
 require_once (root .'/includes/header.php');
-
-
 // Require login
 requireLogin();
 
 // Redirect if admin
 if(isAdmin()) {
-    header('Location: admin_locations.php');
+    header('Location: /admin/index.php');
     exit;
 }
 
@@ -37,6 +35,6 @@ if($result) {
     $_SESSION['message_type'] = 'danger';
 }
 
-header('Location: my-dashboard.php');
+echo '<script>window.location.href = "/user/my-dashboard.php";</script>';
 exit;
 ?>

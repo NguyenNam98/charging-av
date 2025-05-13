@@ -34,7 +34,7 @@ include_once root .'/includes/header.php';
 <div class="row mb-4">
     <div class="col-md-12">
         <h1><i class="fas fa-tachometer-alt me-2"></i> Admin Dashboard</h1>
-        <p class="lead">Welcome to the EasyEV-Charging administration area.</p>
+        <p class="lead">Welcome to the VNN922-EASYEV administration area.</p>
     </div>
 </div>
 
@@ -122,7 +122,7 @@ include_once root .'/includes/header.php';
                 <?php endif; ?>
             </div>
             <div class="card-footer small text-muted">
-                <a href="<?php ?>/admin/checkins.php" class="btn btn-primary btn-sm">
+                <a href="<?php ?>/admin/users.php" class="btn btn-primary btn-sm">
                     <i class="fas fa-list me-1"></i> View All Active Sessions
                 </a>
             </div>
@@ -148,9 +148,6 @@ include_once root .'/includes/header.php';
                     <a href="<?php ?>/admin/users.php" class="list-group-item list-group-item-action">
                         <i class="fas fa-users me-2"></i> Manage Users
                     </a>
-                    <a href="<?php  ?>/search.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-search me-2"></i> Search
-                    </a>
                 </div>
             </div>
         </div>
@@ -164,10 +161,6 @@ include_once root .'/includes/header.php';
             <div class="card-body">
                 <table class="table">
                     <tbody>
-                        <tr>
-                            <td><strong>EasyEV-Charging Version:</strong></td>
-                            <td>1.0.0</td>
-                        </tr>
                         <tr>
                             <td><strong>PHP Version:</strong></td>
                             <td><?php echo phpversion(); ?></td>

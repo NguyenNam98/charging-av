@@ -98,8 +98,8 @@ function requireAdmin() {
                                     Admin
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                    <li><a class="dropdown-item" href="admin_locations.php">Manage Locations</a></li>
-                                    <li><a class="dropdown-item" href="admin_users.php">Manage Users</a></li>
+                                    <li><a class="dropdown-item" href="/admin/locations.php">Manage Locations</a></li>
+                                    <li><a class="dropdown-item" href="/admin/users.php">Manage Users</a></li>
                                 </ul>
                             </li>
                         <?php else : ?>

@@ -1,8 +1,6 @@
 <?php
 $page_title = 'Login';
 require_once 'includes/header.php';
-require_once 'includes/auth.php';
-
 
 // Redirect if already logged in
 if(isLoggedIn()) {
@@ -10,10 +8,10 @@ if(isLoggedIn()) {
     exit;
 }
 
-
-// Initialize variables
 $email = '';
 $error = '';
+// 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character, at least 8 characters long
+$passwordPattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/';
 
 // Process form submission
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -24,31 +22,36 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validate form data
     if(empty($email) || empty($password)) {
         $error = 'Please enter both email and password';
-    } else {
-        // Attempt to login
-        $user = new User();
-        $loggedInUser = $user->login($email, $password);
-        
-        if($loggedInUser) {
-            // Create session variables
-            $_SESSION['user_id'] = $loggedInUser['user_id'];
-            $_SESSION['name'] = $loggedInUser['name'];
-            $_SESSION['email'] = $loggedInUser['email'];
-            $_SESSION['user_type'] = $loggedInUser['user_type'];
-            
-            $_SESSION['message'] = 'You are now logged in';
-            $_SESSION['message_type'] = 'success';
-            
-            if($loggedInUser['user_type'] == 'Administrator') {
-                header('Location: /admin/index.php');
-            } else {
-                header('Location: /user/my-dashboard.php');
-            }
-            exit;
-        } else {
-            $error = 'Invalid email or password';
-        }
+    } 
+    if(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Email is not valid';
     }
+    if(!preg_match($passwordPattern, $password)) {
+        $error = 'Password must contain at least 8 characters, including 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character';
+    }
+
+    // Attempt to login
+    $user = new User();
+    $loggedInUser = $user->login($email, $password);
+
+    if($loggedInUser) {
+    
+    // Create session variables
+    $_SESSION['user_id'] = $loggedInUser['user_id'];
+    $_SESSION['name'] = $loggedInUser['name'];
+    $_SESSION['email'] = $loggedInUser['email'];
+    $_SESSION['user_type'] = $loggedInUser['user_type'];
+    
+    $_SESSION['message'] = 'You are now logged in';
+    $_SESSION['message_type'] = 'success';
+    
+    header('Location: /index.php');
+    } else {
+        $error = 'Invalid email or password';
+    }
+
+
+      
 }
 ?>
 
@@ -78,7 +81,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </form>
                 
                 <div class="mt-3 text-center">
-                    <p>Don't have an account? <a href="register.php">Register</a></p>
+                    <p>Don't have an account? <a href="/register.php">Register</a></p>
                 </div>
             </div>
         </div>

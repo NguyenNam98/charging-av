@@ -1,4 +1,4 @@
-<?php
+    <?php
 if ( ! defined("root") ) {
   define('root', $_SERVER['DOCUMENT_ROOT']);
 }
@@ -58,6 +58,6 @@ if($sessionId) {
     $_SESSION['message_type'] = 'danger';
 }
 
-header('Location: /user/my-dashboard.php');
+echo '<script>window.location.href = "/user/my-dashboard.php";</script>';
 exit;
 ?>

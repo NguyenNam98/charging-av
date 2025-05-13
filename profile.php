@@ -6,7 +6,6 @@ require_once (root . '/config/config.php');
 require_once (root . '/classes/Database.php');
 require_once (root . '/classes/User.php');
 require_once (root . '/includes/header.php');
-require_once 'includes/auth.php';
 
 
 requireLogin();  // your helper to guard access
@@ -50,11 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($success) {
             $_SESSION['message'] = 'Profile updated!';
             $_SESSION['type']    = 'success';
-            header('Location: profile.php');
+            echo '<script>window.location.href = "/profile.php";</script>';
+
             exit;
         } else {
             $_SESSION['message'] = 'Update failed.';
-            $_SESSION['type']    = 'danger';
+            $_SESSION['message_type']    = 'danger';
         }
     }
 }
