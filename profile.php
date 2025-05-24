@@ -24,19 +24,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
 
-    // validate...
-    if ($name === '') {
+    // validate input
+    if (empty($name)) {
         $errors['name'] = 'Name is required';
     }
-    if ($email === '') {
+
+    if (empty($email)) {
         $errors['email'] = 'Email is required';
     } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'Invalid email format';
     } elseif ($email !== $userData['email'] && $user->emailExists($email)) {
         $errors['email'] = 'That email is already taken';
     }
-    if ($phone === '') {
-        $errors['phone'] = 'Phone is required';
+
+    if (empty($phone)) {
+      $errors['phone'] = 'Phone number is required';
+    } else {
+        // Basic international phone number regex (accepts +, digits, space, dashes, parentheses)
+        $sanitizedPhone = trim($phone);
+        
+        if (!preg_match('/^\+?[0-9\s\-\(\)]{7,20}$/', $sanitizedPhone)) {
+            $errors['phone'] = 'Invalid phone number format';
+        }
     }
 
     if (empty($errors)) {

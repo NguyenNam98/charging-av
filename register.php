@@ -51,8 +51,15 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['email'] = 'Email is already registered';
     }
     
-    if(empty($phone)) {
-        $errors['phone'] = 'Phone number is required';
+    if (empty($phone)) {
+    $errors['phone'] = 'Phone number is required';
+    } else {
+        // Basic international phone number regex (accepts +, digits, space, dashes, parentheses)
+        $sanitizedPhone = trim($phone);
+        
+        if (!preg_match('/^\+?[0-9\s\-\(\)]{7,20}$/', $sanitizedPhone)) {
+            $errors['phone'] = 'Invalid phone number format';
+        }
     }
     
     if(empty($password) || !preg_match($passwordPattern, $password)) {
