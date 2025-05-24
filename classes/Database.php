@@ -4,81 +4,65 @@ class Database {
     private $user = DB_USER;
     private $pass = DB_PASS;
     private $dbname = DB_NAME;
-    
-    private $dbh;
-    private $error;
+
+    private $conn;
     private $stmt;
-    
+    private $error;
+
     public function __construct() {
-        // Set DSN
-        $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->dbname;
-        
-        // Set options
-        $options = array(
-            PDO::ATTR_PERSISTENT => true,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        );
-        
-        // Create PDO instance
-        try {
-            $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
-        } catch(PDOException $e) {
-            $this->error = $e->getMessage();
-            echo 'Connection Error: ' . $this->error;
+        $this->conn = new mysqli($this->host, $this->user, $this->pass, $this->dbname);
+
+        if ($this->conn->connect_error) {
+            $this->error = $this->conn->connect_error;
+            die('Connection Error: ' . $this->error);
         }
     }
-    
+
     // Prepare statement with query
     public function query($query) {
-        $this->stmt = $this->dbh->prepare($query);
-    }
-    
-    // Bind values
-    public function bind($param, $value, $type = null) {
-
-        if(is_null($type)) {
-            switch(true) {
-                case is_int($value):
-                    $type = PDO::PARAM_INT;
-                    break;
-                case is_bool($value):
-                    $type = PDO::PARAM_BOOL;
-                    break;
-                case is_null($value):
-                    $type = PDO::PARAM_NULL;
-                    break;
-                default:
-                    $type = PDO::PARAM_STR;
-            }
+        $this->stmt = $this->conn->prepare($query);
+        if (!$this->stmt) {
+            die('Query Error: ' . $this->conn->error);
         }
-        $this->stmt->bindValue($param, $value, $type);
     }
-    
+
+    // Bind values (type must be specified like 's', 'i', 'd', 'b')
+    public function bind($types, ...$params) {
+        $this->stmt->bind_param($types, ...$params);
+    }
+
     // Execute the prepared statement
     public function execute() {
         return $this->stmt->execute();
     }
-    
-    // Get result set as array of objects
+
+    // Get result set as array
     public function resultSet() {
         $this->execute();
-        return $this->stmt->fetchAll();
+        $result = $this->stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
-    
-    // Get single record as object
-    public function single():mixed {
+
+    // Get single record
+    public function single() {
         $this->execute();
-        return $this->stmt->fetch();
+        $result = $this->stmt->get_result();
+        return $result->fetch_assoc();
     }
-    
+
     // Get row count
     public function rowCount() {
-        return $this->stmt->rowCount();
+        return $this->stmt->affected_rows;
     }
-    
+
     // Get last inserted ID
     public function lastInsertId() {
-        return $this->dbh->lastInsertId();
+        return $this->conn->insert_id;
+    }
+
+    // Close connection
+    public function close() {
+        $this->stmt?->close();
+        $this->conn->close();
     }
 }

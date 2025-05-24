@@ -1,63 +1,47 @@
 <?php
-date_default_timezone_set(timezoneId: 'Australia/Sydney');
+date_default_timezone_set('Australia/Sydney');
+
 class ChargingSession {
     private $db;
-    
+
     public function __construct() {
-        $this->db = new Database;
+        $this->db = new Database();
     }
-    
-    // Create a new charging session (check-in)
+
     public function checkIn($userId, $locationId) {
-        // Prepare query
-        $this->db->query('INSERT INTO charging_sessions (user_id, location_id, check_in_time) VALUES (:user_id, :location_id, NOW())');
-        
-        // Bind values
-        $this->db->bind(':user_id', $userId);
-        $this->db->bind(':location_id', $locationId);
-        
-        // Execute
-        if($this->db->execute()) {
+        $this->db->query('INSERT INTO charging_sessions (user_id, location_id, check_in_time) VALUES (?, ?, NOW())');
+        $this->db->bind("ii", $userId, $locationId);
+        if ($this->db->execute()) {
             return $this->db->lastInsertId();
-        } else {
-            return false;
         }
+        return false;
     }
-    
-    // Complete a charging session (check-out)
+
     public function checkOut($sessionId) {
-        // Get session details for cost calculation
         $this->db->query('SELECT cs.*, cl.cost_per_hour, cl.description
                          FROM charging_sessions cs
                          JOIN charging_locations cl ON cs.location_id = cl.location_id
-                         WHERE cs.session_id = :session_id AND cs.status = "active"');
-        $this->db->bind(':session_id', $sessionId);
+                         WHERE cs.session_id = ? AND cs.status = "active"');
+        $this->db->bind("i", $sessionId);
         $session = $this->db->single();
-        
-        if (!$session) {
-            return false;
-        }
-        
-        // Calculate time difference and cost
+
+        if (!$session) return false;
+
         $checkInTime = new DateTime($session['check_in_time']);
-        $checkOutTime = new DateTime(); // current time
-        
+        $checkOutTime = new DateTime();
         $interval = $checkInTime->diff($checkOutTime);
-        print('interval: ' . $interval->format('%d days %h hours %i minutes'));
+
         $hours = $interval->h + ($interval->days * 24) + ($interval->i / 60);
         $totalCost = $hours * $session['cost_per_hour'];
-        
-        // Update session in database
+
         $this->db->query('UPDATE charging_sessions 
                          SET check_out_time = NOW(), 
-                             total_cost = :total_cost, 
+                             total_cost = ?, 
                              status = "completed" 
-                         WHERE session_id = :session_id');
-        
-        $this->db->bind(':total_cost', $totalCost);
-        $this->db->bind(':session_id', $sessionId);
-        
-        if($this->db->execute()) {
+                         WHERE session_id = ?');
+        $this->db->bind("di", $totalCost, $sessionId);
+
+        if ($this->db->execute()) {
             return [
                 'session_id' => $sessionId,
                 'location' => $session['description'],
@@ -67,25 +51,19 @@ class ChargingSession {
                 'cost_per_hour' => $session['cost_per_hour'],
                 'total_cost' => number_format($totalCost, 2)
             ];
-        } else {
-            return false;
         }
+        return false;
     }
-    
-    // Get active charging session for a user
+
     public function getActiveSession($userId) {
         $this->db->query('SELECT cs.*, cl.description, cl.cost_per_hour 
                          FROM charging_sessions cs 
                          JOIN charging_locations cl ON cs.location_id = cl.location_id 
-                         WHERE cs.user_id = :user_id AND cs.status = "active"');
-        $this->db->bind(':user_id', $userId);
-        
+                         WHERE cs.user_id = ? AND cs.status = "active"');
+        $this->db->bind("i", $userId);
         return $this->db->single();
     }
 
-
-    
-    
     public function getAllActiveSessions() {
         $this->db->query('SELECT u.name AS user_name, cl.description AS location_name, cs.check_in_time 
                           FROM charging_sessions cs
@@ -95,30 +73,23 @@ class ChargingSession {
                           ORDER BY cs.check_in_time DESC');
         return $this->db->resultSet();
     }
-    // Get total number of active charging sessions
+
     public function getTotalActiveSessions() {
         $this->db->query('SELECT COUNT(*) AS total FROM charging_sessions WHERE status = "active"');
         $row = $this->db->single();
         return $row ? (int)$row['total'] : 0;
     }
-    // Get user's past sessions
+
     public function getUserPastSessions($userId) {
         $this->db->query('SELECT cs.*, cl.description 
                          FROM charging_sessions cs 
                          JOIN charging_locations cl ON cs.location_id = cl.location_id 
-                         WHERE cs.user_id = :user_id AND cs.status = "completed" 
+                         WHERE cs.user_id = ? AND cs.status = "completed" 
                          ORDER BY cs.check_out_time DESC');
-        $this->db->bind(':user_id', $userId);
-        
+        $this->db->bind("i", $userId);
         return $this->db->resultSet();
     }
 
-    /**
-     * Get all charging sessions for a specific user
-     * 
-     * @param int $userId The user ID
-     * @return array Array of charging sessions for the user
-     */
     public function getUserChargingSessions($userId) {
         $this->db->query("SELECT 
                     cs.session_id, 
@@ -135,21 +106,13 @@ class ChargingSession {
                 JOIN 
                     charging_locations cl ON cs.location_id = cl.location_id
                 WHERE 
-                    cs.user_id = :user_id
+                    cs.user_id = ?
                 ORDER BY 
                     cs.check_in_time DESC");
-        
-        $this->db->bind(':user_id', $userId);
-        
+        $this->db->bind("i", $userId);
         return $this->db->resultSet();
     }
 
-    /**
-     * Get the active charging session for a specific user if exists
-     * 
-     * @param int $userId The user ID
-     * @return array|null The active session data or null if no active session
-     */
     public function getUserActiveSession($userId) {
         $this->db->query("SELECT 
                     cs.session_id, 
@@ -164,12 +127,10 @@ class ChargingSession {
                 JOIN 
                     charging_locations cl ON cs.location_id = cl.location_id
                 WHERE 
-                    cs.user_id = :user_id 
+                    cs.user_id = ? 
                     AND cs.status = 'active'
                 LIMIT 1");
-        
-        $this->db->bind(':user_id', $userId);
-        
+        $this->db->bind("i", $userId);
         return $this->db->single();
     }
-    }
+}

@@ -43,13 +43,14 @@ CREATE TABLE IF NOT EXISTS charging_sessions (
 -- demo2@gmail.com - user - 12345678@Sa
 
 -- insert charging locations
-
-INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (1, 'Downtown Parking Garage', 2, 12.60, '2025-05-06 14:30:35', '2025-05-13 14:34:57');
+INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (1, 'Downtown Parking Garage', 2, 12.61, '2025-05-06 14:30:35', '2025-05-24 20:17:44');
 INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (2, 'Shopping Mall East', 8, 10.00, '2025-05-06 14:30:35', '2025-05-06 14:30:35');
 INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (3, 'City Center Plaza', 3, 15.00, '2025-05-06 14:30:35', '2025-05-06 14:30:35');
 INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (4, 'North Business Park', 10, 8.75, '2025-05-06 14:30:35', '2025-05-06 14:30:35');
 INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (5, 'West Side Community Center', 2, 9.99, '2025-05-06 14:30:35', '2025-05-06 14:30:35');
 INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (6, 'Parking 1', 12, 100.00, '2025-05-13 14:16:39', '2025-05-13 14:16:50');
+INSERT INTO charging_locations (location_id, description, num_stations, cost_per_hour, created_at, updated_at) VALUES (7, 'Downtown Parking Garage', 2, 200.00, '2025-05-24 20:18:16', '2025-05-24 20:18:16');
+
 
 
 -- insert users
@@ -64,6 +65,10 @@ INSERT INTO users (user_id, name, email, phone, password, user_type, created_at)
 INSERT INTO users (user_id, name, email, phone, password, user_type, created_at) VALUES (13, 'Nguyen Nam', 'test456@gmail.com', '0492911759', '$2y$12$VrWMbn8Bt7qeCtvW0nUmaOaqXqu24H/DkA0aZdB4J9pj9gwlKAzEO', 'User', '2025-05-13 12:36:16');
 INSERT INTO users (user_id, name, email, phone, password, user_type, created_at) VALUES (14, 'Nguyen Nam', 'admin1@gmail.com', '0492911759', '$2y$12$fJqL2xpi933Ilyt3TUfRvOdiLVLN9eSJKO5N5ZbjqoaTwzJIg07Uq', 'Administrator', '2025-05-13 12:40:56');
 INSERT INTO users (user_id, name, email, phone, password, user_type, created_at) VALUES (15, 'Nguyen Nam', 'michalnam90@gmail.com', '0492911759', '$2y$12$qkE6qCzMA/gMj1x6MW8lUOY6DDchibOQ36j/SmtDGyaR86b05rKia', 'User', '2025-05-20 16:04:34');
+INSERT INTO users (user_id, name, email, phone, password, user_type, created_at) VALUES (16, 'demo3', 'demo3@gmail.com', '0492911759', '$2y$12$xhiV04y42OsLyQf89w0iruoxfMRLol17WHoOHi/pRT60rbo1rTzu.', 'User', '2025-05-24 20:22:29');
+INSERT INTO users (user_id, name, email, phone, password, user_type, created_at) VALUES (17, 'user', 'user@gmail.com', '0492911759', '$2y$12$DcC9GIhxbdUxF9FNoc.d3.auBqamLxVfJodHID6otnTPtETBFzFsu', 'User', '2025-05-24 20:30:53');
+INSERT INTO users (user_id, name, email, phone, password, user_type, created_at) VALUES (18, 'admin', 'admin@gmail.com', '0492911722', '$2y$12$6bfH51bVvlfTjY0PBoCaF.sZscv6Z.juancnxfO.9UN6rfBk3hWsu', 'Administrator', '2025-05-24 20:31:34');
+
 
 -- insert charging sessions
 INSERT INTO charging_sessions (session_id, user_id, location_id, check_in_time, check_out_time, total_cost, status) VALUES (1, 2, 1, '2023-05-01 09:00:00', '2023-05-01 11:30:00', 31.25, 'completed');
