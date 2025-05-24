@@ -7,7 +7,6 @@ define('DB_NAME', 'easyev');
 
 // Application settings
 define('SITE_NAME', 'VNN922-EASYEV');
-define('SITE_URL', 'http://localhost:8000/easyev');
 
 // Start session if not already started
 if (session_status() == PHP_SESSION_NONE) {
